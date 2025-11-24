@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { UserPlus2, User2 } from "lucide-react";
+import { User2 } from "lucide-react";
 
 type NavId = "home" | "features" | "report" | "insights" | "contact";
 
@@ -27,7 +27,6 @@ const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
-  // blur ตอนเลื่อน
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -35,7 +34,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // observer ใช้เฉพาะหน้า Home
   useEffect(() => {
     if (pathname !== "/") return;
 
@@ -83,8 +81,8 @@ const Navbar = () => {
           : "bg-transparent backdrop-blur-0 border-b border-transparent"
       }`}
     >
-      <div className="container mx-auto px-6 py-6 flex justify-between items-center">
-        {/* Logo */}
+      <div className="container mx-auto px-6 py-3 flex items-center justify-between relative">
+        {/* Logo ซ้าย */}
         <Link href="/" className="flex items-center gap-1">
           <div className="bg-gradient-to-br from-pink-500 to-orange-500 px-3 py-1 rounded-lg text-white font-bold">
             F
@@ -94,9 +92,9 @@ const Navbar = () => {
           </h1>
         </Link>
 
-        {/* Nav */}
-        <nav className="border border-white/10 rounded-full px-6 py-1.5 bg-white/5 backdrop-blur-xl">
-          <ul className="flex items-center space-x-4 ">
+        {/* เมนูกลางจอ (absolute center) */}
+        <nav className="absolute left-1/2 -translate-x-1/2 border border-white/10 rounded-full px-6 py-1.5 bg-white/5 backdrop-blur-xl">
+          <ul className="flex items-center space-x-4">
             {navItems.map((item) => (
               <li key={item.id}>
                 <button
@@ -114,7 +112,7 @@ const Navbar = () => {
           </ul>
         </nav>
 
-         {/* Login Icon Button */}
+        {/* ปุ่ม Login ขวา */}
         <button
           onClick={() => router.push("/auth/login")}
           className="flex flex-col items-center gap-1 cursor-pointer"
@@ -124,7 +122,6 @@ const Navbar = () => {
           </span>
           <span className="text-[11px] text-white/80">Log In</span>
         </button>
-
       </div>
     </header>
   );

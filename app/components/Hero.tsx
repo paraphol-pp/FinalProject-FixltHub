@@ -9,7 +9,7 @@ const Hero = () => {
 
   useEffect(() => {
     const duration = 1000; // ระยะเวลาอนิเมชัน 1 วิ
-    const frame = 16;      // ~60fps
+    const frame = 16; // ~60fps
 
     const animateCount = (target: number, setter: (v: number) => void) => {
       let current = 0;
@@ -39,8 +39,9 @@ const Hero = () => {
     <header className="container mx-auto px-6 relative flex justify-between items-start py-20 pt-50">
       {/* LEFT */}
       <div className="flex flex-col space-y-10 w-1/2">
-        <p className="text-sm text-orange-400 font-semibold border border-white/20 w-fit rounded-full px-5 py-0.5">
-          ● Empowering Communities
+        <p className="text-sm text-orange-400 font-semibold border border-white/20 w-fit rounded-full px-5 py-0.5 flex items-center gap-2">
+          <span className="glow-dot" />
+          <span>Empowering Communities</span>
         </p>
 
         {/* big text */}
@@ -64,7 +65,10 @@ const Hero = () => {
         </p>
 
         <div className="flex items-center gap-4 ">
-          <Link href="/report/new" className="px-6 py-3 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm md:text-base font-semibold text-white shadow-xl shadow-orange-500/25 transition hover:brightness-110 cursor-pointer">
+          <Link
+            href="/report/new"
+            className="px-6 py-3 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm md:text-base font-semibold text-white shadow-xl shadow-orange-500/25 transition hover:brightness-110 cursor-pointer"
+          >
             Report Issue →
           </Link>
 
@@ -86,7 +90,6 @@ const Hero = () => {
             <p className="text-white/50">Resolved Cases</p>
           </div>
         </div>
-
       </div>
 
       {/* RIGHT */}
@@ -98,8 +101,8 @@ const Hero = () => {
         />
         {/* CenTer carD */}
         <div className="bg-linear-to-br from-pink-500 to-orange-500 px-9 py-6 text-5xl rounded-lg text-white font-bold w-fit absolute right-36 top-30 z-10 shadow-lg shadow-black/50">
-            F
-          </div>
+          F
+        </div>
         {/* FLOATING CARD */}
         <div className="absolute right-[150px] top-[150px] rotate-[-5deg] bg-[#0d1125] rounded-2xl p-6 w-[300px] h-[300px] shadow-xl shadow-black/70 flex flex-col">
           <p className="text-xs text-white/60">REAL-TIME STATS</p>
