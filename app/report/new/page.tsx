@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { IssueCategory, addIssue } from "@/app/store/issuesSlice";
-import { useAppDispatch } from "@/app/store";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 import { Camera } from "lucide-react";
+import type { IssueCategory } from "@/app/store/issuesSlice";
 
 export default function NewReportPage() {
   const router = useRouter();
-  const dispatch = useAppDispatch();
 
   const categories: IssueCategory[] = [
     "Electrical",
@@ -28,6 +26,7 @@ export default function NewReportPage() {
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,33 +36,57 @@ export default function NewReportPage() {
   };
 
   const handleClearImage = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // กันไม่ให้คลิก X แล้วมันเปิด dialog เลือกรูปอีก
     e.preventDefault();
     e.stopPropagation();
     setImageFile(null);
     setImagePreview("");
   };
 
-  const handleSubmit = () => {
-    if (!title.trim()) return alert("Please enter title.");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) {
+      alert("Please enter title.");
+      return;
+    }
 
-    // ใช้เวลาตอน submit เป็นวันที่ของ issue
+    setSubmitting(true);
+
+    // format วันที่ให้เหมือน mockup เลย
     const submittedDate = new Date().toLocaleDateString("en-US");
 
-    dispatch(
-      addIssue({
-        title,
-        category,
-        location: location || "Unknown",
-        description: description || "No description provided.",
-        reporter: "Citizen X",
-        status: "Pending",
-        date: submittedDate,
-        imageUrl: imagePreview || "/assets/issues/issue-1.avif",
-      })
-    );
+    try {
+      const res = await fetch("/api/issues", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title,
+          category,
+          location: location || "Unknown",
+          description: description || "No description provided.",
+          reporter: "Citizen X",
+          date: submittedDate,
+          // ❗ ตอนนี้ backend ยังไม่ได้รองรับการ upload รูปจริง ๆ
+          // เลยส่งเป็น default path ไปก่อน
+          imageUrl: "/assets/issues/issue-1.avif",
+        }),
+      });
 
-    router.push("/report");
+      if (!res.ok) {
+        console.error(await res.text());
+        alert("บันทึกข้อมูลไม่สำเร็จ");
+        return;
+      }
+
+      // ถ้าบันทึกสำเร็จ กลับไปหน้า report
+      router.push("/report");
+    } catch (err) {
+      console.error(err);
+      alert("เกิดข้อผิดพลาดระหว่างส่งข้อมูล");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -89,7 +112,10 @@ export default function NewReportPage() {
           </p>
 
           {/* Form Container */}
-          <div className="rounded-3xl bg-neutral-900/60 border border-white/10 p-8 shadow-xl space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-3xl bg-neutral-900/60 border border-white/10 p-8 shadow-xl space-y-6"
+          >
             {/* Title */}
             <div>
               <label className="block text-sm text-slate-300 mb-1">
@@ -151,7 +177,7 @@ export default function NewReportPage() {
               />
             </div>
 
-            {/* Image Upload */}
+            {/* Image Upload (preview only ตอนนี้) */}
             <div>
               <label className="block text-sm text-slate-300 mb-2">
                 Evidence Photo
@@ -191,6 +217,7 @@ export default function NewReportPage() {
             {/* Buttons */}
             <div className="flex justify-between mt-6">
               <button
+                type="button"
                 onClick={() => router.push("/report")}
                 className="px-5 py-2 rounded-full border border-white/15 text-sm text-slate-200 hover:bg-white/5"
               >
@@ -198,13 +225,14 @@ export default function NewReportPage() {
               </button>
 
               <button
-                onClick={handleSubmit}
-                className="px-6 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white hover:brightness-110"
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60"
               >
-                Submit Report
+                {submitting ? "Submitting..." : "Submit Report"}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </main>
 

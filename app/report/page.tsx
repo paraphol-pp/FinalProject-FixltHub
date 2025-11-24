@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import {
-  IssueStatus,
-  IssueCategory,
-  addIssue,
-  updateIssue,
-  deleteIssue,
-} from "../store/issuesSlice";
-import { useAppDispatch, useAppSelector } from "../store";
+import type { IssueStatus, IssueCategory } from "../store/issuesSlice";
 import {
   MapPin,
   CalendarDays,
@@ -32,25 +25,34 @@ const statusColorClass: Record<IssueStatus, string> = {
 
 const PER_PAGE = 12;
 
+// type ให้ตรงกับ prisma issue
+type Issue = {
+  id: number;
+  title: string;
+  location: string;
+  date: string;
+  description: string;
+  category: IssueCategory;
+  status: IssueStatus;
+  reporter: string;
+  imageUrl: string;
+};
+
 const ReportPage = () => {
-  const dispatch = useAppDispatch();
-  const issues = useAppSelector((state) => state.issues.items);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "All">("All");
-  const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "All">(
-    "All"
-  );
+  const [categoryFilter, setCategoryFilter] = useState<
+    IssueCategory | "All"
+  >("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [openIssueId, setOpenIssueId] = useState<number | null>(null);
-  const [showNewForm, setShowNewForm] = useState(false);
 
-  // ฟอร์มสร้างใหม่แบบง่าย ๆ
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState<IssueCategory>("Others");
-  const [newLocation, setNewLocation] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newImageUrl, setNewImageUrl] = useState("/assets/issues/issue-1.avif");
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const categories: IssueCategory[] = [
     "Electrical",
@@ -60,6 +62,25 @@ const ReportPage = () => {
     "Safety",
     "Others",
   ];
+
+  // โหลดทั้งหมดจาก API
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/issues");
+        if (!res.ok) throw new Error("Failed to fetch issues");
+        const data: Issue[] = await res.json();
+        setIssues(data);
+      } catch (err) {
+        console.error(err);
+        setError("โหลดรายการรายงานไม่สำเร็จ");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
 
   const filtered = useMemo(() => {
     return issues.filter((issue) => {
@@ -88,40 +109,79 @@ const ReportPage = () => {
     currentPageSafe * PER_PAGE
   );
 
-  const handleStatusChange = (id: number, status: IssueStatus) => {
-    dispatch(updateIssue({ id, data: { status } }));
-  };
+  // เปลี่ยนสถานะผ่าน API (PATCH /api/issues/:id)
+  const handleStatusChange = async (id: number, status: IssueStatus) => {
+  try {
+    const res = await fetch(`/api/issues/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
 
-  const handleDelete = (id: number) => {
-    if (confirm("Delete this report?")) {
-      dispatch(deleteIssue(id));
+    if (!res.ok) throw new Error("Failed to update status");
+
+    const updated: Issue = await res.json();
+
+    // อัปเดต state ด้านหน้าให้ sync กับ DB
+    setIssues((prev) =>
+      prev.map((issue) => (issue.id === id ? updated : issue))
+    );
+  } catch (err) {
+    console.error(err);
+    alert("อัปเดตสถานะไม่สำเร็จ");
+  }
+};
+
+
+  // ลบผ่าน API (DELETE /api/issues/:id)
+  const handleDelete = async (id: number) => {
+    if (!confirm("Delete this report?")) return;
+
+    try {
+      setDeletingId(id);
+      const res = await fetch(`/api/issues/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete");
+
+      setIssues((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      console.error(err);
+      alert("ลบรายงานไม่สำเร็จ");
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const handleCreate = () => {
-    if (!newTitle.trim()) return alert("Please fill in title.");
-
-    dispatch(
-      addIssue({
-        title: newTitle,
-        category: newCategory,
-        location: newLocation || "Unknown Location",
-        date: new Date().toLocaleDateString("en-US"),
-        description: newDescription || "No description provided.",
-        status: "Pending",
-        reporter: "Citizen X",
-        imageUrl: newImageUrl,
-      })
+  // state ตอนกำลังโหลด / error
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen pt-30 pb-16">
+          <div className="container mx-auto px-6 text-slate-400">
+            Loading reports...
+          </div>
+        </main>
+        <Footer />
+      </>
     );
+  }
 
-    // reset form
-    setNewTitle("");
-    setNewCategory("Others");
-    setNewLocation("");
-    setNewDescription("");
-    setNewImageUrl("/assets/issues/issue-1.avif");
-    setShowNewForm(false);
-  };
+  if (error) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen pt-30 pb-16">
+          <div className="container mx-auto px-6 text-red-400">{error}</div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -205,7 +265,7 @@ const ReportPage = () => {
                 key={issue.id}
                 className="group relative rounded-4xl bg-slate-900/5 border border-white/5 px-7 pt-12 pb-6 flex flex-col shadow-xl shadow-black/40 overflow-hidden"
               >
-                {/* status pill + settings icon (เหมือนเดิม แต่วางทับ card) */}
+                {/* status pill + settings icon */}
                 <div className="absolute top-5 right-6 flex items-center gap-2 z-20">
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
@@ -216,7 +276,9 @@ const ReportPage = () => {
                   </span>
                   <button
                     onClick={() =>
-                      setOpenIssueId(openIssueId === issue.id ? null : issue.id)
+                      setOpenIssueId(
+                        openIssueId === issue.id ? null : issue.id
+                      )
                     }
                     className="p-1 rounded-full bg-black/40 border border-white/10 text-slate-200 hover:bg-white/10"
                   >
@@ -224,7 +286,7 @@ const ReportPage = () => {
                   </button>
                 </div>
 
-                {/* faint image background แบบหน้า Home */}
+                {/* image bg */}
                 <div className="absolute inset-x-0 -top-10 h-52 opacity-[0.40] overflow-hidden">
                   <Image
                     src={issue.imageUrl}
@@ -234,7 +296,7 @@ const ReportPage = () => {
                   />
                 </div>
 
-                {/* เนื้อหา card */}
+                {/* content */}
                 <div className="relative z-10">
                   <div className="mb-6">
                     <p className="text-4xl md:text-5xl font-semibold text-slate-400/80 opacity-0">
@@ -285,7 +347,7 @@ const ReportPage = () => {
                   </div>
                 </div>
 
-                {/* Settings panel: ลอยบน card ไม่ดัน grid */}
+                {/* Settings panel */}
                 {openIssueId === issue.id && (
                   <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-black/70 border border-white/10 p-3 flex flex-col gap-3 z-30 backdrop-blur-sm">
                     <div className="flex flex-wrap items-center gap-3">
@@ -300,7 +362,8 @@ const ReportPage = () => {
                             e.target.value as IssueStatus
                           )
                         }
-                        className="rounded-full bg-neutral-900 border border-white/15 px-3 py-1 text-xs text-slate-200"
+                        disabled={updatingId === issue.id}
+                        className="rounded-full bg-neutral-900 border border-white/15 px-3 py-1 text-xs text-slate-200 disabled:opacity-60"
                       >
                         <option value="Pending">Pending</option>
                         <option value="In Progress">In Progress</option>
@@ -310,10 +373,13 @@ const ReportPage = () => {
 
                     <button
                       onClick={() => handleDelete(issue.id)}
-                      className="inline-flex items-center gap-2 text-xs font-semibold text-red-400 hover:text-red-300"
+                      disabled={deletingId === issue.id}
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-60"
                     >
                       <Trash2 size={14} />
-                      Delete Report
+                      {deletingId === issue.id
+                        ? "Deleting..."
+                        : "Delete Report"}
                     </button>
                   </div>
                 )}
