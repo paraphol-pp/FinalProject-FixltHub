@@ -38,11 +38,11 @@ const Features = () => {
           ].map((item, idx) => (
             <div
               key={idx}
-              className="group p-0.5 rounded-3xl bg-gradient-to-b from-white/10 to-transparent hover:from-orange-500/50 hover:to-pink-500/50 transition-all duration-500 cursor-pointer"
+              className="group p-0.5 rounded-3xl bg-linear-to-b from-white/10 to-transparent hover:from-orange-500 hover:to-pink-500 transition-all duration-500 cursor-pointer"
             >
-              <div className="bg-neutral-950 rounded-[1.4rem] p-8 h-full relative overflow-hidden">
+              <div className="bg-neutral-950 rounded-[1.4rem] p-8 h-full relative overflow-hidden ">
                 <div
-                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center text-white mb-6 shadow-lg`}
+                  className={`w-14 h-14 rounded-2xl bg-linear-to-br ${item.color} flex items-center justify-center text-white mb-6 shadow-lg`}
                 >
                   {item.icon}
                 </div>
@@ -51,7 +51,7 @@ const Features = () => {
                 </h3>
                 <p className="text-neutral-400 leading-relaxed">{item.desc}</p>
 
-                <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
+                <div className="absolute bottom-0 right-0 w-32 h-32 bg-linear-to-br from-white/5 to-transparent rounded-full blur-2xl group-hover:bg-white/10 transition-colors"></div>
               </div>
             </div>
           ))}

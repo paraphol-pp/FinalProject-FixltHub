@@ -29,10 +29,10 @@ const Marquee = () => {
     
     <div className="marquee w-full py-10 bg-neutral-900/5 border-y border-white/5 overflow-hidden relative cursor-pointer">
       {/* Left fade */}
-      <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-neutral-950 to-transparent z-10" />
+      <div className="absolute inset-y-0 left-0 w-32 bg-linear-to-r from-neutral-950 to-transparent z-10" />
 
       {/* Right fade */}
-      <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-neutral-950 to-transparent z-10" />
+      <div className="absolute inset-y-0 right-0 w-32 bg-linear-to-l from-neutral-950 to-transparent z-10" />
 
       {/* SCROLLING ROW */}
       <div className="flex gap-16 animate-infinite-scroll whitespace-nowrap">
