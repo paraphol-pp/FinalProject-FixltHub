@@ -28,18 +28,11 @@ export default function NewReportPage() {
   const [imagePreview, setImagePreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = e.target.files?.[0];
-  //   if (!file) return;
-  //   setImageFile(file);
-  //   setImagePreview(URL.createObjectURL(file));
-  // };
-
     const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // เก็บไฟล์ไว้เผื่ออนาคต (จะใช้หรือไม่ใช้ก็ได้)
+    // เก็บไฟล์ไว้เผื่ออนาคต
     setImageFile(file);
 
     // แปลงไฟล์เป็น base64 (data URL)
@@ -68,7 +61,7 @@ export default function NewReportPage() {
 
     setSubmitting(true);
 
-    // format วันที่ให้เหมือน mockup เลย
+    // format วันที่
     const submittedDate = new Date().toLocaleDateString("en-US");
 
     try {
@@ -94,7 +87,7 @@ export default function NewReportPage() {
         return;
       }
 
-      // ถ้าบันทึกสำเร็จ กลับไปหน้า report
+      // บันทึกเสร็จ กลับไปหน้า report
       router.push("/report");
     } catch (err) {
       console.error(err);
@@ -234,7 +227,7 @@ export default function NewReportPage() {
               <button
                 type="button"
                 onClick={() => router.push("/report")}
-                className="px-5 py-2 rounded-full border border-white/15 text-sm text-slate-200 hover:bg-white/5"
+                className="px-5 py-2 rounded-full border border-white/15 text-sm text-slate-200 hover:bg-white/5 cursor-pointer"
               >
                 Cancel
               </button>
@@ -242,7 +235,7 @@ export default function NewReportPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60"
+                className="px-6 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white hover:brightness-110 disabled:opacity-60 cursor-pointer"
               >
                 {submitting ? "Submitting..." : "Submit Report"}
               </button>

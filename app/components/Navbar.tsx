@@ -27,6 +27,9 @@ const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isHome = pathname === "/";
+  const isReportPath = pathname.startsWith("/report"); // <-- อยู่ /report หรือ /report/new
+
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
@@ -35,7 +38,7 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    if (pathname !== "/") return;
+    if (!isHome) return; // ทำ observer แค่ตอนอยู่หน้า Home
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -55,7 +58,7 @@ const Navbar = () => {
     });
 
     return () => observer.disconnect();
-  }, [pathname]);
+  }, [isHome]);
 
   const scrollToSection = (id: NavId) => {
     const el = document.getElementById(id);
@@ -66,10 +69,19 @@ const Navbar = () => {
   };
 
   const handleNavClick = (id: NavId) => {
-    if (pathname !== "/") {
-      router.push(`/#${id}`);
+    // ถ้าไม่ใช่หน้า Home
+    if (!isHome) {
+      if (id === "report") {
+        // กด Report จากหน้าไหนก็พาไป /report
+        router.push("/report");
+      } else {
+        // เมนูอื่น ๆ พากลับไปหน้า Home แล้วเลื่อนไป section นั้น
+        router.push(`/#${id}`);
+      }
       return;
     }
+
+    // ถ้าอยู่หน้า Home อยู่แล้ว แค่เลื่อน
     scrollToSection(id);
   };
 
@@ -84,7 +96,7 @@ const Navbar = () => {
       <div className="container mx-auto px-6 py-3 flex items-center justify-between relative">
         {/* Logo ซ้าย */}
         <Link href="/" className="flex items-center gap-1">
-          <div className="bg-gradient-to-br from-pink-500 to-orange-500 px-3 py-1 rounded-lg text-white font-bold">
+          <div className="bg-linear-to-br from-pink-500 to-orange-500 px-3 py-1 rounded-lg text-white font-bold">
             F
           </div>
           <h1 className="text-2xl font-bold">
@@ -95,20 +107,29 @@ const Navbar = () => {
         {/* เมนูกลางจอ (absolute center) */}
         <nav className="absolute left-1/2 -translate-x-1/2 border border-white/10 rounded-full px-6 py-1.5 bg-white/5 backdrop-blur-xl">
           <ul className="flex items-center space-x-4">
-            {navItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => handleNavClick(item.id)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
-                    activeSection === item.id && pathname === "/"
-                      ? "bg-white/20 text-white"
-                      : "text-white/60 hover:text-white hover:bg-white/10 cursor-pointer"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              </li>
-            ))}
+            {navItems.map((item) => {
+              // เงื่อนไข active:
+              // - ถ้าอยู่หน้า Home → ใช้ activeSection ตามเดิม
+              // - ถ้าอยู่หน้า /report หรือ /report/new → ให้ปุ่ม Report active
+              const isActive =
+                (isHome && activeSection === item.id) ||
+                (!isHome && item.id === "report" && isReportPath);
+
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => handleNavClick(item.id)}
+                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "text-white/60 hover:text-white hover:bg-white/10 cursor-pointer"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </nav>
 

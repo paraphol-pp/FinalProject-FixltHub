@@ -18,6 +18,7 @@ model Issue {
   reporter    String
   imageUrl    String @db.LongText
   createdAt   DateTime @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model User {

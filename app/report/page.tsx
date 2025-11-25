@@ -258,7 +258,7 @@ const ReportPage = () => {
             </div>
           </div>
 
-          {/* Grid รายการทั้งหมด + settings / delete */}
+          {/* Grid : settings / delete */}
           <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 mb-10 cursor-pointer">
             {paginated.map((issue) => (
               <article
@@ -394,8 +394,8 @@ const ReportPage = () => {
                 (page) => (
                   <button
                     key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`min-w-9 h-9 rounded-full border text-sm ${
+                    onClick={() => {setCurrentPage(page); window.scrollTo({ top: 0, behavior: "smooth" });}}
+                    className={`min-w-9 h-9 rounded-full border text-sm cursor-pointer ${
                       page === currentPageSafe
                         ? "bg-white text-black border-white"
                         : "bg-neutral-900 text-slate-200 border-white/10 hover:bg-white/10"

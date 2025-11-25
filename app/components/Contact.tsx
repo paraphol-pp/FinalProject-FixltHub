@@ -1,20 +1,33 @@
 "use client";
 
-import type { FC, FormEvent } from "react";
+import { useState, type FC, FormEvent } from "react";
 import { Mail, Phone } from "lucide-react";
 
 const Contact: FC = () => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"success" | "error" | "">("");
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // ไว้ต่อ backend หรือส่ง API ทีหลังได้เลย
-    console.log("Send message");
+
+    if (!firstName.trim() || !lastName.trim() || !message.trim()) {
+      setStatus("error");
+      return;
+    }
+
+    setStatus("success");
+    setFirstName("");
+    setLastName("");
+    setMessage("");
   };
 
   return (
     <section className="py-24 bg-neutral-950">
       <div className="container mx-auto px-6">
         <div className="grid gap-12 lg:grid-cols-2 items-start">
-          {/* LEFT: Text + contact info */}
+          {/* LEFT */}
           <div className="space-y-8">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -27,7 +40,6 @@ const Contact: FC = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Email card */}
               <div className="flex items-center gap-4 rounded-2xl bg-neutral-900 border border-white/5 px-5 py-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
                   <Mail size={22} />
@@ -42,7 +54,6 @@ const Contact: FC = () => {
                 </div>
               </div>
 
-              {/* Phone card */}
               <div className="flex items-center gap-4 rounded-2xl bg-neutral-900 border border-white/5 px-5 py-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/15 text-pink-400">
                   <Phone size={22} />
@@ -59,10 +70,10 @@ const Contact: FC = () => {
             </div>
           </div>
 
-          {/* RIGHT: Form */}
+          {/* RIGHT: FORM */}
           <div className="rounded-3xl bg-neutral-900 border border-white/5 p-7 md:p-8 shadow-xl">
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Name row */}
+              {/* Name */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
@@ -70,7 +81,9 @@ const Contact: FC = () => {
                   </label>
                   <input
                     type="text"
-                    defaultValue="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="First Name"
                     className="w-full rounded-full border border-white/10 bg-neutral-950 px-4 py-2.5 text-sm text-white outline-none focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/50"
                   />
                 </div>
@@ -81,23 +94,35 @@ const Contact: FC = () => {
                   </label>
                   <input
                     type="text"
-                    defaultValue="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Last Name"
                     className="w-full rounded-full border border-white/10 bg-neutral-950 px-4 py-2.5 text-sm text-white outline-none focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/50"
                   />
                 </div>
               </div>
 
-              {/* Message */}
+              {/* message */}
               <div className="space-y-1">
                 <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-neutral-400">
                   Message
                 </label>
                 <textarea
                   rows={5}
-                  defaultValue="How can we help you?"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Message..."
                   className="w-full rounded-2xl border border-white/10 bg-neutral-950 px-4 py-3 text-sm text-white outline-none resize-none focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/50"
                 />
               </div>
+
+              {/* ERROR / SUCCESS */}
+              {status === "error" && (
+                <p className="text-red-400 text-sm">⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง</p>
+              )}
+              {status === "success" && (
+                <p className="text-green-400 text-sm">✅ ส่งข้อความสำเร็จ!</p>
+              )}
 
               {/* Button */}
               <button
