@@ -28,12 +28,29 @@ export default function NewReportPage() {
   const [imagePreview, setImagePreview] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+  //   setImageFile(file);
+  //   setImagePreview(URL.createObjectURL(file));
+  // };
+
+    const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // เก็บไฟล์ไว้เผื่ออนาคต (จะใช้หรือไม่ใช้ก็ได้)
     setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+
+    // แปลงไฟล์เป็น base64 (data URL)
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string; // data:image/png;base64,....
+      setImagePreview(base64);               // เอาไว้ทั้ง preview + ส่งเข้า DB
+    };
+    reader.readAsDataURL(file);
   };
+
 
   const handleClearImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -67,9 +84,7 @@ export default function NewReportPage() {
           description: description || "No description provided.",
           reporter: "Citizen X",
           date: submittedDate,
-          // ❗ ตอนนี้ backend ยังไม่ได้รองรับการ upload รูปจริง ๆ
-          // เลยส่งเป็น default path ไปก่อน
-          imageUrl: "/assets/issues/issue-1.avif",
+          imageUrl: imagePreview || "/assets/issues/issue-1.avif",
         }),
       });
 

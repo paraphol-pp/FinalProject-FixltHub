@@ -16,7 +16,7 @@ model Issue {
   category    String
   status      String
   reporter    String
-  imageUrl    String
+  imageUrl    String @db.LongText
   createdAt   DateTime @default(now())
 }
 

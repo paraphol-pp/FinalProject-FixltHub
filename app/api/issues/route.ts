@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       status: "Pending",
       reporter: body.reporter ?? "Citizen X",
       date: formattedDate,
-      imageUrl: body.imageUrl ?? "/assets/issues/issue-1.avif",
+      imageUrl: body.imageUrl || "/assets/issues/issue-1.avif",
     },
   });
 
