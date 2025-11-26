@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
@@ -9,6 +9,26 @@ import type { IssueCategory } from "@/app/store/issuesSlice";
 
 export default function NewReportPage() {
   const router = useRouter();
+  const [user, setUser] = useState<{ name?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ดึง user จาก /api/auth/me เพื่อใช้ชื่อเป็น reporter
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const categories: IssueCategory[] = [
     "Electrical",
@@ -75,7 +95,7 @@ export default function NewReportPage() {
           category,
           location: location || "Unknown",
           description: description || "No description provided.",
-          reporter: "Citizen X",
+          reporter: user?.name || "Citizen X",
           date: submittedDate,
           imageUrl: imagePreview || "/assets/issues/issue-1.avif",
         }),

@@ -3,13 +3,19 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { User2 } from "lucide-react";
+import { User2, LogOut } from "lucide-react";
 
 type NavId = "home" | "features" | "report" | "insights" | "contact";
 
 type NavItem = {
   label: string;
   id: NavId;
+};
+
+type User = {
+  id: number;
+  name: string;
+  email: string;
 };
 
 const navItems: NavItem[] = [
@@ -23,12 +29,43 @@ const navItems: NavItem[] = [
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<NavId>("home");
+  const [user, setUser] = useState<User | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
 
   const isHome = pathname === "/";
   const isReportPath = pathname.startsWith("/report"); // <-- อยู่ /report หรือ /report/new
+
+  // โหลด user จาก /api/auth/me (backend) แทน localStorage
+  const fetchUser = async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (e) {
+      console.error("Failed to fetch user:", e);
+      setUser(null);
+    }
+    setIsClient(true);
+  };
+
+  useEffect(() => {
+    fetchUser();
+
+    // ฟัง event จากการเปลี่ยนแปลงสถานะการล็อกอิน (เช่น หลัง login/logout)
+    const handler = () => {
+      fetchUser();
+    };
+
+    window.addEventListener("auth:changed", handler);
+    return () => window.removeEventListener("auth:changed", handler);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -68,6 +105,16 @@ const Navbar = () => {
     window.scrollTo({ top: y, behavior: "smooth" });
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout error:", e);
+    }
+    setUser(null);
+    router.push("/");
+  };
+
   const handleNavClick = (id: NavId) => {
     // ถ้าไม่ใช่หน้า Home
     if (!isHome) {
@@ -87,7 +134,7 @@ const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 hidden md:block ${
         isScrolled
           ? "bg-black/40 backdrop-blur-lg border-b border-white/10"
           : "bg-transparent backdrop-blur-0 border-b border-transparent"
@@ -133,16 +180,38 @@ const Navbar = () => {
           </ul>
         </nav>
 
-        {/* ปุ่ม Login ขวา */}
-        <button
-          onClick={() => router.push("/auth/login")}
-          className="flex flex-col items-center gap-1 cursor-pointer"
-        >
-          <span className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center border border-white/10 hover:bg-neutral-800 transition">
-            <User2 className="w-4 h-4 text-white" />
-          </span>
-          <span className="text-[11px] text-white/80">Log In</span>
-        </button>
+        {/* ปุ่ม Login / Logout ขวา */}
+        {isClient && (
+          <>
+            {!user ? (
+              <button
+                onClick={() => router.push("/auth/login")}
+                className="flex flex-col items-center gap-1 cursor-pointer"
+              >
+                <span className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center border border-white/10 hover:bg-neutral-800 transition">
+                  <User2 className="w-4 h-4 text-white" />
+                </span>
+                <span className="text-[11px] text-white/80">Log In</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white">{user.name}</p>
+                  <p className="text-[11px] text-white/60">{user.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex flex-col items-center gap-1 cursor-pointer"
+                >
+                  <span className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center border border-red-500/20 hover:bg-red-900/50 transition">
+                    <LogOut className="w-4 h-4 text-red-400" />
+                  </span>
+                  <span className="text-[11px] text-red-400">Log Out</span>
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </header>
   );

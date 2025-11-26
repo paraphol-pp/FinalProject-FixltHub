@@ -42,6 +42,8 @@ const ReportPage = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"mine" | "all" | "others">("all");
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "All">("All");
@@ -63,11 +65,28 @@ const ReportPage = () => {
     "Others",
   ];
 
-  // โหลดทั้งหมดจาก API
+  // โหลด issues ตาม viewMode และ current user
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch("/api/issues");
+        // fetch current user
+        const meRes = await fetch("/api/auth/me");
+        let me: any = null;
+        if (meRes.ok) {
+          const m = await meRes.json();
+          me = m.user ?? null;
+        }
+        setUser(me);
+
+        // build URL
+        let url = "/api/issues";
+        if (viewMode === "mine" && me?.name) {
+          url = `/api/issues?reporter=${encodeURIComponent(me.name)}`;
+        } else if (viewMode === "others" && me?.name) {
+          url = `/api/issues?reporter=${encodeURIComponent(me.name)}&exclude=1`;
+        }
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch issues");
         const data: Issue[] = await res.json();
         setIssues(data);
@@ -80,7 +99,7 @@ const ReportPage = () => {
     };
 
     load();
-  }, []);
+  }, [viewMode]);
 
   const filtered = useMemo(() => {
     return issues.filter((issue) => {
@@ -201,6 +220,17 @@ const ReportPage = () => {
             </div>
 
             <div className="flex flex-col md:flex-row gap-3 md:items-center">
+              <div className="hidden md:block">
+                <select
+                  value={viewMode}
+                  onChange={(e) => setViewMode(e.target.value as any)}
+                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none mr-3"
+                >
+                  <option value="mine">My posts</option>
+                  <option value="all">All posts</option>
+                  <option value="others">Others' posts</option>
+                </select>
+              </div>
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/50" />
@@ -274,16 +304,16 @@ const ReportPage = () => {
                   >
                     ● {issue.status}
                   </span>
-                  <button
-                    onClick={() =>
-                      setOpenIssueId(
-                        openIssueId === issue.id ? null : issue.id
-                      )
-                    }
-                    className="p-1 rounded-full bg-black/40 border border-white/10 text-slate-200 hover:bg-white/10"
-                  >
-                    <Settings2 size={14} />
-                  </button>
+
+                  {/* Show settings button only for admins or the issue owner */}
+                  {(user?.role === "admin" || issue.reporter === user?.name) && (
+                    <button
+                      onClick={() => setOpenIssueId(openIssueId === issue.id ? null : issue.id)}
+                      className="p-1 rounded-full bg-black/40 border border-white/10 text-slate-200 hover:bg-white/10"
+                    >
+                      <Settings2 size={14} />
+                    </button>
+                  )}
                 </div>
 
                 {/* image bg */}
@@ -340,15 +370,15 @@ const ReportPage = () => {
                       </span>
                     </div>
 
-                    <button className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200 cursor-pointer">
+                    <Link href={`/report/${issue.id}`} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200">
                       Details
                       <ChevronRight size={14} />
-                    </button>
+                    </Link>
                   </div>
                 </div>
 
                 {/* Settings panel */}
-                {openIssueId === issue.id && (
+                {openIssueId === issue.id && (user?.role === "admin" || issue.reporter === user?.name) && (
                   <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-black/70 border border-white/10 p-3 flex flex-col gap-3 z-30 backdrop-blur-sm">
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="text-xs text-slate-300">

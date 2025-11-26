@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: Request) {
+  // สนับสนุน query params:
+  // - reporter=NAME -> only posts by NAME
+  // - reporter=NAME&exclude=1 -> posts not by NAME (others)
+  const url = new URL(req.url);
+  const reporter = url.searchParams.get("reporter");
+  const exclude = url.searchParams.get("exclude");
+
+  const where: any = {};
+  if (reporter) {
+    if (exclude) {
+      where.reporter = { not: reporter };
+    } else {
+      where.reporter = reporter;
+    }
+  }
+
   const issues = await prisma.issue.findMany({
+    where: where,
     orderBy: { id: "desc" },
   });
   return NextResponse.json(issues);
@@ -33,3 +50,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json(issue, { status: 201 });
 }
+

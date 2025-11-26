@@ -18,15 +18,38 @@ const Report = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"mine" | "all" | "others">("mine");
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
 
-  // ดึงข้อมูลจาก API ครั้งแรกที่โหลดหน้า
+  // ดึง user จาก backend และ issues ตาม viewMode
   useEffect(() => {
+    setLoading(true);
     const load = async () => {
       try {
-        const res = await fetch("/api/issues");
+        // fetch current user (may be null)
+        const meRes = await fetch("/api/auth/me");
+        let me: any = null;
+        if (meRes.ok) {
+          const m = await meRes.json();
+          me = m.user ?? null;
+        }
+        setUser(me);
+
+        // build issues URL based on viewMode
+        let url = "/api/issues";
+        if (viewMode === "mine" && me?.name) {
+          url = `/api/issues?reporter=${encodeURIComponent(me.name)}`;
+        } else if (viewMode === "others" && me?.name) {
+          url = `/api/issues?reporter=${encodeURIComponent(me.name)}&exclude=1`;
+        }
+
+        console.log("[Report] viewMode:", viewMode, "me.name:", me?.name, "url:", url);
+
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch issues");
 
         const data: Issue[] = await res.json();
+        console.log("[Report] fetched issues count:", data.length, "data:", data);
         setIssues(data);
       } catch (err) {
         console.error(err);
@@ -37,7 +60,7 @@ const Report = () => {
     };
 
     load();
-  }, []);
+  }, [viewMode]);
 
   // แสดง loading / error state ก่อน
   if (loading) {
@@ -76,13 +99,25 @@ const Report = () => {
             </p>
           </div>
 
-          <Link
-            href="/report"
-            className="hidden md:inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/10 text-sm text-white/80 hover:bg-white/5 transition cursor-pointer"
-          >
-            Show All
-            <ChevronRight size={16} />
-          </Link>
+          <div className="hidden md:flex items-center gap-3">
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value as any)}
+              className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none"
+            >
+              <option value="mine">My posts</option>
+              <option value="all">All posts</option>
+              <option value="others">Others' posts</option>
+            </select>
+
+            <Link
+              href="/report"
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/10 text-sm text-white/80 hover:bg-white/5 transition cursor-pointer"
+            >
+              Show All
+              <ChevronRight size={16} />
+            </Link>
+          </div>
         </div>
 
         {/* ถ้าไม่มี issue เลย */}
@@ -160,10 +195,10 @@ const Report = () => {
                     </span>
                   </div>
 
-                  <button className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200 cursor-pointer">
+                  <Link href={`/report/${issue.id}`} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200">
                     Details
                     <ChevronRight size={14} />
-                  </button>
+                  </Link>
                 </div>
               </article>
             ))}

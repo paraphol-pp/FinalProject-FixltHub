@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import SidebarMenu from "./components/SidebarMenu";
 import StoreProvider from "./StoreProvider";
 
 const geistSans = Geist({
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`bg-gradient ${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
+        <SidebarMenu />
         <StoreProvider>{children}</StoreProvider>
       </body>
     </html>
