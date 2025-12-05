@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Issue } from "@/app/store/issuesSlice";
+import Navbar from "@/app/components/Navbar";
+import Footer from "@/app/components/Footer";
+import { ArrowLeft, Calendar, MapPin, Tag, User, Clock } from "lucide-react";
+import type { Issue } from "@/app/store/issuesSlice";
 
 export default function ReportDetailPage() {
   const params = useParams();
@@ -117,7 +120,9 @@ export default function ReportDetailPage() {
           {/* Content */}
           <div className="p-8">
             {/* Title */}
-            <h1 className="text-4xl font-bold text-white mb-4">{issue.title}</h1>
+            <h1 className="text-4xl font-bold text-white mb-4">
+              {issue.title}
+            </h1>
 
             {/* Category & Date */}
             <div className="flex flex-wrap gap-4 mb-6">

@@ -1,16 +1,14 @@
-// app/api/issues/[id]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// helper type สำหรับ params ที่เป็น Promise
 type ParamsPromise = Promise<{ id: string }>;
 
-// GET /api/issues/:id
 export async function GET(
   req: NextRequest,
   { params }: { params: ParamsPromise }
 ) {
-  const { id } = await params; // ✅ ต้อง await ก่อน
+  const { id } = await params;
   const issue = await prisma.issue.findUnique({
     where: { id: Number(id) },
   });
@@ -22,16 +20,14 @@ export async function GET(
   return NextResponse.json(issue);
 }
 
-// PUT /api/issues/:id → อัปเดต status
 export async function PUT(
   req: NextRequest,
   { params }: { params: ParamsPromise }
 ) {
   try {
-    const { id } = await params; // ✅ await
-    const { status } = await req.json();
+    const { id } = await params;
+    const { status, title, description, category, location, imageUrl } = await req.json();
 
-    // ตรวจสิทธิ์: อ่าน user จาก cookie
     const authToken = req.cookies.get("auth-token");
     let user: any = null;
     if (authToken) {
@@ -42,7 +38,6 @@ export async function PUT(
       }
     }
 
-    // อ่าน issue ปัจจุบันเพื่อตรวจ owner
     const existing = await prisma.issue.findUnique({ where: { id: Number(id) } });
     if (!existing) {
       return NextResponse.json({ message: "Not found" }, { status: 404 });
@@ -57,7 +52,14 @@ export async function PUT(
 
     const updated = await prisma.issue.update({
       where: { id: Number(id) },
-      data: { status },
+      data: {
+        status,
+        title,
+        description,
+        category,
+        location,
+        imageUrl,
+      },
     });
 
     return NextResponse.json(updated);
@@ -75,14 +77,13 @@ export async function DELETE(
   try {
     const { id } = await params; // ✅ await
 
-    // ตรวจสิทธิ์: อ่าน user จาก cookie
     const authToken = req.cookies.get("auth-token");
     let user: any = null;
     if (authToken) {
       try {
         user = JSON.parse(authToken.value);
       } catch (e) {
-        // ignore
+
       }
     }
 

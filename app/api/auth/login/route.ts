@@ -8,17 +8,14 @@ export async function POST(req: Request) {
 
     const { email, password } = body;
 
-    // ตรวจ field
     if (!email || !password) {
       return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
     }
 
-    // ค้นหา user ด้วย email
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    // ถ้าไม่เจอ user
     if (!user) {
       console.log("[login] user not found for email:", email);
       return NextResponse.json(
@@ -27,7 +24,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // เปรียบเทียบ plaintext password (ไม่ใช้ bcrypt)
     if (user.password !== password) {
       console.log("[login] password mismatch for email:", email);
       return NextResponse.json(
@@ -38,13 +34,12 @@ export async function POST(req: Request) {
 
     console.log("[login] success for user:", user.id);
 
-    // สร้าง response พร้อม HTTP-only cookie (รวม role ด้วย)
+    const role = (user as any).role ?? "user";
     const response = NextResponse.json(
-      { message: "Login success", user: { id: user.id, name: user.name, email: user.email, role: (user as any).role } },
+      { message: "Login success", user: { id: user.id, name: user.name, email: user.email, role } },
       { status: 200 }
     );
 
-    // ตั้ง HTTP-only cookie (ไม่สามารถ access จาก JavaScript ได้)
     response.cookies.set("auth-token", JSON.stringify({
       id: user.id,
       name: user.name,

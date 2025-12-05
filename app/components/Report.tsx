@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, CalendarDays, ChevronRight } from "lucide-react";
 
-// เอา type มาจาก issuesSlice (ใช้ให้ตรงกับ Prisma / API)
-import type { Issue, IssueStatus } from "@/app/store/issuesSlice";
+import { Issue, IssueStatus } from "@/app/store/issuesSlice";
+import IssueDetailModal from "./IssueDetailModal";
 
 const statusColorClass: Record<IssueStatus, string> = {
   Pending: "bg-amber-500/10 text-amber-300 border border-amber-500/60",
@@ -18,8 +18,11 @@ const Report = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"mine" | "all" | "others">("mine");
-  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
+  const [viewMode, setViewMode] = useState<"mine" | "all" | "others">("all");
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(
+    null
+  );
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   // ดึง user จาก backend และ issues ตาม viewMode
   useEffect(() => {
@@ -43,13 +46,25 @@ const Report = () => {
           url = `/api/issues?reporter=${encodeURIComponent(me.name)}&exclude=1`;
         }
 
-        console.log("[Report] viewMode:", viewMode, "me.name:", me?.name, "url:", url);
+        console.log(
+          "[Report] viewMode:",
+          viewMode,
+          "me.name:",
+          me?.name,
+          "url:",
+          url
+        );
 
         const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch issues");
 
         const data: Issue[] = await res.json();
-        console.log("[Report] fetched issues count:", data.length, "data:", data);
+        console.log(
+          "[Report] fetched issues count:",
+          data.length,
+          "data:",
+          data
+        );
         setIssues(data);
       } catch (err) {
         console.error(err);
@@ -76,9 +91,7 @@ const Report = () => {
   if (error) {
     return (
       <section className="py-24 bg-neutral-950/5">
-        <div className="container mx-auto px-6 text-red-400">
-          {error}
-        </div>
+        <div className="container mx-auto px-6 text-red-400">{error}</div>
       </section>
     );
   }
@@ -89,7 +102,7 @@ const Report = () => {
     <section className="py-24 bg-neutral-950/5">
       <div className="container mx-auto px-6">
         {/* Header row */}
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 gap-4">
           <div>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
               Recent Reports
@@ -99,20 +112,19 @@ const Report = () => {
             </p>
           </div>
 
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <select
               value={viewMode}
               onChange={(e) => setViewMode(e.target.value as any)}
-              className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none"
+              className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none flex-1 md:flex-none"
             >
-              <option value="mine">My posts</option>
+              {user && <option value="mine">My posts</option>}
               <option value="all">All posts</option>
-              <option value="others">Others' posts</option>
             </select>
 
             <Link
               href="/report"
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-white/10 text-sm text-white/80 hover:bg-white/5 transition cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-full border border-white/10 text-sm text-white/80 hover:bg-white/5 transition cursor-pointer flex-1 md:flex-none"
             >
               Show All
               <ChevronRight size={16} />
@@ -122,9 +134,7 @@ const Report = () => {
 
         {/* ถ้าไม่มี issue เลย */}
         {topNine.length === 0 ? (
-          <p className="text-slate-500 text-sm">
-            ยังไม่มีรายงานปัญหาในระบบ
-          </p>
+          <p className="text-slate-500 text-sm">ยังไม่มีรายงานปัญหาในระบบ</p>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 cursor-pointer">
             {topNine.map((issue) => (
@@ -163,7 +173,7 @@ const Report = () => {
                   {issue.category}
                 </span>
 
-                <h3 className="text-base md:text-lg font-semibold text-white leading-snug line-clamp-2 mb-3">
+                <h3 className="text-base md:text-lg font-semibold text-white leading-snug line-clamp-2 mb-3 h-11 md:h-14 overflow-hidden">
                   {issue.title}
                 </h3>
 
@@ -178,7 +188,7 @@ const Report = () => {
                   </span>
                 </div>
 
-                <p className="text-xs md:text-sm text-slate-400 line-clamp-3 mb-4">
+                <p className="text-xs md:text-sm text-slate-400 line-clamp-2 mb-4 h-8 md:h-10 overflow-hidden">
                   {issue.description}
                 </p>
 
@@ -187,24 +197,35 @@ const Report = () => {
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-rose-500 flex items-center justify-center text-white text-[10px] font-semibold">
-                      {issue.reporter.charAt(0)}
+                      {(issue.reporter || "Citizen X").charAt(0)}
                     </div>
                     <span>
                       Reported by{" "}
-                      <span className="text-white">{issue.reporter}</span>
+                      <span className="text-white">
+                        {issue.reporter || "Citizen X"}
+                      </span>
                     </span>
                   </div>
 
-                  <Link href={`/report/${issue.id}`} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200">
+                  <button
+                    onClick={() => setSelectedIssue(issue)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200 transition"
+                  >
                     Details
                     <ChevronRight size={14} />
-                  </Link>
+                  </button>
                 </div>
               </article>
             ))}
           </div>
         )}
       </div>
+      {selectedIssue && (
+        <IssueDetailModal
+          issue={selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+        />
+      )}
     </section>
   );
 };

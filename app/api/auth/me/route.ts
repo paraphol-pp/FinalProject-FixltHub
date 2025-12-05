@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    // อ่าน auth-token cookie
     const authToken = req.cookies.get("auth-token");
 
     if (!authToken) {
@@ -13,7 +12,6 @@ export async function GET(req: NextRequest) {
     }
 
     const user = JSON.parse(authToken.value);
-    // ensure role exists for older cookies
     if (!user.role) user.role = "user";
 
     return NextResponse.json(

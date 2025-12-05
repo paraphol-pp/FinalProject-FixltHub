@@ -3,19 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import type { IssueStatus, IssueCategory } from "../store/issuesSlice";
 import {
   MapPin,
   CalendarDays,
   ChevronRight,
-  Settings2,
-  Trash2,
   Search,
   Filter,
   Plus,
 } from "lucide-react";
+import IssueDetailModal from "../components/IssueDetailModal";
 
 const statusColorClass: Record<IssueStatus, string> = {
   Pending: "bg-amber-500/10 text-amber-300 border border-amber-500/60",
@@ -25,7 +23,6 @@ const statusColorClass: Record<IssueStatus, string> = {
 
 const PER_PAGE = 12;
 
-// type ให้ตรงกับ prisma issue
 type Issue = {
   id: number;
   title: string;
@@ -43,18 +40,17 @@ const ReportPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"mine" | "all" | "others">("all");
-  const [user, setUser] = useState<{ name?: string; role?: string } | null>(null);
+  const [user, setUser] = useState<{ name?: string; role?: string } | null>(
+    null
+  );
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<IssueStatus | "All">("All");
-  const [categoryFilter, setCategoryFilter] = useState<
-    IssueCategory | "All"
-  >("All");
+  const [categoryFilter, setCategoryFilter] = useState<IssueCategory | "All">(
+    "All"
+  );
   const [currentPage, setCurrentPage] = useState(1);
-  const [openIssueId, setOpenIssueId] = useState<number | null>(null);
-
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   const categories: IssueCategory[] = [
     "Electrical",
@@ -65,7 +61,6 @@ const ReportPage = () => {
     "Others",
   ];
 
-  // โหลด issues ตาม viewMode และ current user
   useEffect(() => {
     const load = async () => {
       try {
@@ -128,58 +123,10 @@ const ReportPage = () => {
     currentPageSafe * PER_PAGE
   );
 
-  // เปลี่ยนสถานะผ่าน API (PATCH /api/issues/:id)
-  const handleStatusChange = async (id: number, status: IssueStatus) => {
-  try {
-    const res = await fetch(`/api/issues/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status }),
-    });
-
-    if (!res.ok) throw new Error("Failed to update status");
-
-    const updated: Issue = await res.json();
-
-    // อัปเดต state ด้านหน้าให้ sync กับ DB
-    setIssues((prev) =>
-      prev.map((issue) => (issue.id === id ? updated : issue))
-    );
-  } catch (err) {
-    console.error(err);
-    alert("อัปเดตสถานะไม่สำเร็จ");
-  }
-};
-
-
-  // ลบผ่าน API (DELETE /api/issues/:id)
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this report?")) return;
-
-    try {
-      setDeletingId(id);
-      const res = await fetch(`/api/issues/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Failed to delete");
-
-      setIssues((prev) => prev.filter((i) => i.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert("ลบรายงานไม่สำเร็จ");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   // state ตอนกำลังโหลด / error
   if (loading) {
     return (
       <>
-        <Navbar />
         <main className="min-h-screen pt-30 pb-16">
           <div className="container mx-auto px-6 text-slate-400">
             Loading reports...
@@ -193,7 +140,6 @@ const ReportPage = () => {
   if (error) {
     return (
       <>
-        <Navbar />
         <main className="min-h-screen pt-30 pb-16">
           <div className="container mx-auto px-6 text-red-400">{error}</div>
         </main>
@@ -204,8 +150,6 @@ const ReportPage = () => {
 
   return (
     <>
-      <Navbar />
-
       <main className="min-h-screen pt-30 pb-16">
         <div className="container mx-auto px-6">
           {/* Header + controls */}
@@ -219,20 +163,9 @@ const ReportPage = () => {
               </p>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 md:items-center">
-              <div className="hidden md:block">
-                <select
-                  value={viewMode}
-                  onChange={(e) => setViewMode(e.target.value as any)}
-                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none mr-3"
-                >
-                  <option value="mine">My posts</option>
-                  <option value="all">All posts</option>
-                  <option value="others">Others' posts</option>
-                </select>
-              </div>
+            <div className="flex flex-col md:flex-row gap-2 md:items-center">
               {/* Search */}
-              <div className="relative">
+              <div className="relative w-full md:w-auto">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/50" />
                 <input
                   value={search}
@@ -240,20 +173,34 @@ const ReportPage = () => {
                     setSearch(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Search title, location or category..."
-                  className="pl-9 pr-3 py-2 rounded-full bg-neutral-900 border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+                  placeholder="Search title..."
+                  className="w-full md:w-64 pl-9 pr-3 py-2 rounded-full bg-neutral-900 border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
                 />
               </div>
 
-              {/* Status filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-white/50" />
+              {/* Filters Group */}
+              <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                <Filter className="h-4 w-4 text-white/50 shrink-0" />
+
+                {/* View Mode */}
+                <select
+                  value={viewMode}
+                  onChange={(e) => setViewMode(e.target.value as any)}
+                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none min-w-fit"
+                >
+                  {user && user.role !== "admin" && (
+                    <option value="mine">My posts</option>
+                  )}
+                  <option value="all">All posts</option>
+                </select>
+
+                {/* Status */}
                 <select
                   value={statusFilter}
                   onChange={(e) =>
                     setStatusFilter(e.target.value as IssueStatus | "All")
                   }
-                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none"
+                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none min-w-fit"
                 >
                   <option value="All">All Status</option>
                   <option value="Pending">Pending</option>
@@ -261,12 +208,13 @@ const ReportPage = () => {
                   <option value="Resolved">Resolved</option>
                 </select>
 
+                {/* Category */}
                 <select
                   value={categoryFilter}
                   onChange={(e) =>
                     setCategoryFilter(e.target.value as IssueCategory | "All")
                   }
-                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none"
+                  className="bg-neutral-900 border border-white/10 text-sm text-slate-200 rounded-full px-3 py-1.5 focus:outline-none min-w-fit"
                 >
                   <option value="All">All Categories</option>
                   {categories.map((c) => (
@@ -280,7 +228,7 @@ const ReportPage = () => {
               {/* New Report */}
               <Link
                 href="/report/new"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:brightness-110 transition"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-orange-500 via-pink-500 to-fuchsia-500 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 hover:brightness-110 transition w-full md:w-auto shrink-0"
               >
                 <Plus size={16} />
                 New Report
@@ -304,16 +252,6 @@ const ReportPage = () => {
                   >
                     ● {issue.status}
                   </span>
-
-                  {/* Show settings button only for admins or the issue owner */}
-                  {(user?.role === "admin" || issue.reporter === user?.name) && (
-                    <button
-                      onClick={() => setOpenIssueId(openIssueId === issue.id ? null : issue.id)}
-                      className="p-1 rounded-full bg-black/40 border border-white/10 text-slate-200 hover:bg-white/10"
-                    >
-                      <Settings2 size={14} />
-                    </button>
-                  )}
                 </div>
 
                 {/* image bg */}
@@ -338,7 +276,7 @@ const ReportPage = () => {
                     {issue.category}
                   </span>
 
-                  <h3 className="text-base md:text-lg font-semibold text-white leading-snug line-clamp-2 mb-3">
+                  <h3 className="text-base md:text-lg font-semibold text-white leading-snug line-clamp-2 mb-3 h-11 md:h-14 overflow-hidden">
                     {issue.title}
                   </h3>
 
@@ -353,7 +291,7 @@ const ReportPage = () => {
                     </span>
                   </div>
 
-                  <p className="text-xs md:text-sm text-slate-400 line-clamp-3 mb-4">
+                  <p className="text-xs md:text-sm text-slate-400 line-clamp-2 mb-4 h-8 md:h-10 overflow-hidden">
                     {issue.description}
                   </p>
 
@@ -370,49 +308,16 @@ const ReportPage = () => {
                       </span>
                     </div>
 
-                    <Link href={`/report/${issue.id}`} className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200">
+                    {/* Change Link to button */}
+                    <button
+                      onClick={() => setSelectedIssue(issue)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-amber-300 hover:text-amber-200 transition"
+                    >
                       Details
                       <ChevronRight size={14} />
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Settings panel */}
-                {openIssueId === issue.id && (user?.role === "admin" || issue.reporter === user?.name) && (
-                  <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-black/70 border border-white/10 p-3 flex flex-col gap-3 z-30 backdrop-blur-sm">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs text-slate-300">
-                        Update Status:
-                      </span>
-                      <select
-                        value={issue.status}
-                        onChange={(e) =>
-                          handleStatusChange(
-                            issue.id,
-                            e.target.value as IssueStatus
-                          )
-                        }
-                        disabled={updatingId === issue.id}
-                        className="rounded-full bg-neutral-900 border border-white/15 px-3 py-1 text-xs text-slate-200 disabled:opacity-60"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Resolved">Resolved</option>
-                      </select>
-                    </div>
-
-                    <button
-                      onClick={() => handleDelete(issue.id)}
-                      disabled={deletingId === issue.id}
-                      className="inline-flex items-center gap-2 text-xs font-semibold text-red-400 hover:text-red-300 disabled:opacity-60"
-                    >
-                      <Trash2 size={14} />
-                      {deletingId === issue.id
-                        ? "Deleting..."
-                        : "Delete Report"}
                     </button>
                   </div>
-                )}
+                </div>
               </article>
             ))}
           </div>
@@ -424,7 +329,10 @@ const ReportPage = () => {
                 (page) => (
                   <button
                     key={page}
-                    onClick={() => {setCurrentPage(page); window.scrollTo({ top: 0, behavior: "smooth" });}}
+                    onClick={() => {
+                      setCurrentPage(page);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                     className={`min-w-9 h-9 rounded-full border text-sm cursor-pointer ${
                       page === currentPageSafe
                         ? "bg-white text-black border-white"
@@ -439,6 +347,13 @@ const ReportPage = () => {
           )}
         </div>
       </main>
+
+      {selectedIssue && (
+        <IssueDetailModal
+          issue={selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+        />
+      )}
 
       <Footer />
     </>

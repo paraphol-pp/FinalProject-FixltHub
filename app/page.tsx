@@ -1,10 +1,9 @@
-import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import Marquee from "./components/Marquee";
 import Features from "./components/Features";
 import Footer from "./components/Footer";
 import Report from "./components/Report";
-import Insights from "./components/Insights";
+import Update from "./components/Update";
 import Contact from "./components/Contact";
 
 export default function Home() {
@@ -24,10 +23,10 @@ export default function Home() {
         <Report />
       </section>
 
-      <section id="insights">
-        <Insights />
+      <section id="update">
+        <Update />
       </section>
-      
+
       <section id="contact">
         <Contact />
       </section>

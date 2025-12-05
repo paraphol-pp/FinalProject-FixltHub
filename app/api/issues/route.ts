@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
-  // สนับสนุน query params:
-  // - reporter=NAME -> only posts by NAME
-  // - reporter=NAME&exclude=1 -> posts not by NAME (others)
   const url = new URL(req.url);
   const reporter = url.searchParams.get("reporter");
   const exclude = url.searchParams.get("exclude");

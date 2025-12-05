@@ -31,3 +31,11 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
+  message   String   @db.LongText
+  createdAt DateTime @default(now())
+}

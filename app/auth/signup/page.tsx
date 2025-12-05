@@ -8,14 +8,18 @@ import { useState } from "react";
 const SignupPage = () => {
   const router = useRouter();
 
-  // ฟอร์ม state
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // ฟังก์ชัน signup จริง
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -42,7 +46,6 @@ const SignupPage = () => {
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
       <div className="relative w-full max-w-md rounded-3xl bg-neutral-950 border border-white/10 shadow-2xl px-8 py-9">
-
         {/* close */}
         <button
           onClick={() => router.push("/")}
@@ -119,6 +122,24 @@ const SignupPage = () => {
             </div>
           </div>
 
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-xs font-semibold text-white/50 mb-2">
+              CONFIRM PASSWORD
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-2.5 w-4 h-4 text-white/50" />
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-neutral-900 border border-white/10 text-sm text-white placeholder:text-white/50 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+              />
+            </div>
+          </div>
+
           {/* Submit */}
           <button
             type="submit"
@@ -130,7 +151,10 @@ const SignupPage = () => {
 
         <p className="mt-6 text-center text-xs text-white/50">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-amber-300 font-semibold hover:text-amber-200">
+          <Link
+            href="/auth/login"
+            className="text-amber-300 font-semibold hover:text-amber-200"
+          >
             Login
           </Link>
         </p>

@@ -9,7 +9,7 @@ const Contact: FC = () => {
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"success" | "error" | "">("");
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!firstName.trim() || !lastName.trim() || !message.trim()) {
@@ -17,10 +17,23 @@ const Contact: FC = () => {
       return;
     }
 
-    setStatus("success");
-    setFirstName("");
-    setLastName("");
-    setMessage("");
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, message }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send message");
+
+      setStatus("success");
+      setFirstName("");
+      setLastName("");
+      setMessage("");
+    } catch (error) {
+      console.error(error);
+      setStatus("error");
+    }
   };
 
   return (
@@ -118,7 +131,9 @@ const Contact: FC = () => {
 
               {/* ERROR / SUCCESS */}
               {status === "error" && (
-                <p className="text-red-400 text-sm">⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง</p>
+                <p className="text-red-400 text-sm">
+                  ⚠️ กรุณากรอกข้อมูลให้ครบทุกช่อง
+                </p>
               )}
               {status === "success" && (
                 <p className="text-green-400 text-sm">✅ ส่งข้อความสำเร็จ!</p>

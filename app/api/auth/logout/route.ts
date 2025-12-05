@@ -6,12 +6,11 @@ export async function POST(req: Request) {
     { status: 200 }
   );
 
-  // ลบ auth-token cookie
   response.cookies.set("auth-token", "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 0, // ตั้ง maxAge=0 เพื่อลบ cookie
+    maxAge: 0,
     path: "/",
   });
 

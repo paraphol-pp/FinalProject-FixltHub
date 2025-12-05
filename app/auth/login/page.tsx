@@ -4,6 +4,7 @@ import { Mail, Lock, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import AlertModal from "../../components/AlertModal";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -13,6 +14,19 @@ const LoginPage = () => {
   // ------------------------------------------------------------------------------------
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const [alertState, setAlertState] = useState<{
+    isOpen: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+    onClose?: () => void;
+  }>({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
 
   // ------------------------------------------------------------------------------------
   // ฟังก์ชัน LOGIN จริง
@@ -30,22 +44,45 @@ const LoginPage = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Login failed");
+        setAlertState({
+          isOpen: true,
+          type: "error",
+          title: "Login Failed",
+          message: data.error || "Invalid email or password",
+        });
         return;
       }
 
-      alert("Login success!");
-      router.push("/"); // ไปหน้าแรกหลัง login
-      // แจ้งให้ components อื่น ๆ รีเฟรชสถานะ auth
-      try {
-        window.dispatchEvent(new Event("auth:changed"));
-      } catch (e) {
-        // no-op
-      }
+      setAlertState({
+        isOpen: true,
+        type: "success",
+        title: "Login Success",
+        message: "Welcome back to FixIt Hub!",
+        onClose: () => {
+          // Redirect everyone to home (admin will access dashboard via button)
+          router.push("/");
+          try {
+            window.dispatchEvent(new Event("auth:changed"));
+          } catch (e) {
+          }
+        },
+      });
     } catch (err) {
       console.error(err);
-      alert("Something went wrong");
+      setAlertState({
+        isOpen: true,
+        type: "error",
+        title: "Error",
+        message: "Something went wrong. Please try again.",
+      });
     }
+  };
+
+  const closeAlert = () => {
+    if (alertState.onClose) {
+      alertState.onClose();
+    }
+    setAlertState((prev) => ({ ...prev, isOpen: false }));
   };
 
   // ------------------------------------------------------------------------------------
@@ -53,8 +90,15 @@ const LoginPage = () => {
   // ------------------------------------------------------------------------------------
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="relative w-full max-w-md rounded-3xl bg-neutral-950 border border-white/10 shadow-2xl px-8 py-9">
+      <AlertModal
+        isOpen={alertState.isOpen}
+        onClose={closeAlert}
+        type={alertState.type}
+        title={alertState.title}
+        message={alertState.message}
+      />
 
+      <div className="relative w-full max-w-md rounded-3xl bg-neutral-950 border border-white/10 shadow-2xl px-8 py-9">
         {/* Close Button */}
         <button
           onClick={() => router.push("/")}
@@ -78,7 +122,6 @@ const LoginPage = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-
           {/* Email */}
           <div>
             <label className="block text-xs font-semibold text-white/50 mb-2">
