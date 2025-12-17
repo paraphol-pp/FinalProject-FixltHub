@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 
 type User = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role?: string;
@@ -177,7 +177,7 @@ export default function ManageAdminPage() {
                     onClick={async () => {
                       if (!confirm("Delete this admin?")) return;
                       try {
-                        const res = await fetch(`/api/admins/${admin.id}`, {
+                        const res = await fetch(`/api/admin/${admin.id}`, {
                           method: "DELETE",
                         });
                         if (!res.ok) throw new Error("Delete failed");

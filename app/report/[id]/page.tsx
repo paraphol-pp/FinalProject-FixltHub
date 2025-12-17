@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Navbar from "@/app/components/Navbar";
-import Footer from "@/app/components/Footer";
-import { ArrowLeft, Calendar, MapPin, Tag, User, Clock } from "lucide-react";
 import type { Issue } from "@/app/store/issuesSlice";
 
 export default function ReportDetailPage() {
@@ -163,7 +160,7 @@ export default function ReportDetailPage() {
             {/* Reporter */}
             <div className="pt-6 border-t border-white/10">
               <div className="flex items-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center text-white font-bold mr-4">
+                <div className="w-12 h-12 rounded-full bg-linear-to-br from-pink-500 to-orange-500 flex items-center justify-center text-white font-bold mr-4">
                   {issue.reporter.charAt(0).toUpperCase()}
                 </div>
                 <div>

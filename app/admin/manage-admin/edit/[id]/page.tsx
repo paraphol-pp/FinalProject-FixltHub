@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import AlertModal from "../../../../components/AlertModal";
 
 type User = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role?: string;
@@ -47,7 +47,7 @@ export default function EditAdminPage() {
         const res = await fetch("/api/admins");
         if (!res.ok) throw new Error("Failed to fetch admins");
         const data = await res.json();
-        const found = data.find((u: User) => u.id === Number(id));
+        const found = data.find((u: User) => u.id === String(id));
         if (found) {
           setTargetAdmin(found);
           setName(found.name);

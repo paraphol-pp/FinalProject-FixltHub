@@ -6,7 +6,7 @@ import { Pencil } from "lucide-react";
 import AlertModal from "../../../../components/AlertModal";
 
 type User = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role?: string;
@@ -47,7 +47,7 @@ export default function ChangePasswordPage() {
         const res = await fetch("/api/admins");
         if (!res.ok) throw new Error("Failed to fetch admins");
         const data = await res.json();
-        const found = data.find((u: User) => u.id === Number(id));
+        const found = data.find((u: User) => u.id === String(id));
         if (found) {
           setTargetAdmin(found);
         } else {

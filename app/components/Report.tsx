@@ -55,17 +55,26 @@ const Report = () => {
           url
         );
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Failed to fetch issues");
+        // const res = await fetch(url);
+        // if (!res.ok) throw new Error("Failed to fetch issues");
 
-        const data: Issue[] = await res.json();
-        console.log(
-          "[Report] fetched issues count:",
-          data.length,
-          "data:",
-          data
-        );
+        // const data: Issue[] = await res.json();
+        // console.log(
+        //   "[Report] fetched issues count:",
+        //   data.length,
+        //   "data:",
+        //   data
+        // );
+        // setIssues(data);
+        const res = await fetch(url);
+        const text = await res.text();
+        console.log("[Report] status:", res.status, "body:", text);
+
+        if (!res.ok) throw new Error(text || "Failed to fetch issues");
+
+        const data: Issue[] = JSON.parse(text);
         setIssues(data);
+
       } catch (err) {
         console.error(err);
         setError("โหลดข้อมูลไม่สำเร็จ");
@@ -154,7 +163,7 @@ const Report = () => {
                 </div>
 
                 {/* faint image background */}
-                <div className="absolute inset-x-0 -top-10 h-52 opacity-[0.40] overflow-hidden">
+                <div className="absolute inset-x-0 -top-10 h-58 opacity-[0.40] overflow-hidden">
                   <Image
                     src={issue.imageUrl}
                     alt={issue.title}
@@ -163,7 +172,7 @@ const Report = () => {
                   />
                 </div>
 
-                <div className="mb-6 relative">
+                <div className="relative">
                   <p className="text-4xl md:text-5xl font-semibold text-slate-400/80 opacity-0">
                     Issue {issue.id}
                   </p>

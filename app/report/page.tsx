@@ -62,6 +62,7 @@ const ReportPage = () => {
   ];
 
   useEffect(() => {
+    setLoading(true)
     const load = async () => {
       try {
         // fetch current user
@@ -85,6 +86,7 @@ const ReportPage = () => {
         if (!res.ok) throw new Error("Failed to fetch issues");
         const data: Issue[] = await res.json();
         setIssues(data);
+        
       } catch (err) {
         console.error(err);
         setError("โหลดรายการรายงานไม่สำเร็จ");
@@ -150,12 +152,12 @@ const ReportPage = () => {
 
   return (
     <>
-      <main className="min-h-screen pt-30 pb-16">
+      <main className="min-h-screen pt-30 pb-16 ">
         <div className="container mx-auto px-6">
           {/* Header + controls */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
+              <h1 className="text-3xl md:text-4xl font-bold ">
                 Recent Reports
               </h1>
               <p className="text-white/50 mt-1">
@@ -255,7 +257,7 @@ const ReportPage = () => {
                 </div>
 
                 {/* image bg */}
-                <div className="absolute inset-x-0 -top-10 h-52 opacity-[0.40] overflow-hidden">
+                <div className="absolute inset-x-0 -top-10 h-58 opacity-[0.40] overflow-hidden">
                   <Image
                     src={issue.imageUrl}
                     alt={issue.title}
@@ -266,7 +268,7 @@ const ReportPage = () => {
 
                 {/* content */}
                 <div className="relative z-10">
-                  <div className="mb-6">
+                  <div className="">
                     <p className="text-4xl md:text-5xl font-semibold text-slate-400/80 opacity-0">
                       Issue {issue.id}
                     </p>

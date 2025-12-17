@@ -74,6 +74,7 @@ export default function NewReportPage() {
     setIsSubmitting(true);
 
     try {
+      const reporter = user?.name?.trim();
       const res = await fetch("/api/issues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -82,10 +83,8 @@ export default function NewReportPage() {
           description,
           location,
           category,
-          reporter: user?.name || "Anonymous",
-          imageUrl:
-            imageUrl ||
-            "https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?auto=format&fit=crop&q=80&w=2600",
+          ...(reporter ? { reporter } : {}), // ✅ ส่งเฉพาะตอนมีชื่อจริง
+          imageUrl: imageUrl || "https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?auto=format&fit=crop&q=80&w=2600",
         }),
       });
 
