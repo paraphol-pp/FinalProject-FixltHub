@@ -6,11 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "postinstall": "prisma generate"
+    "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "5.19.0",
     "@reduxjs/toolkit": "^2.11.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
@@ -31,7 +29,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
-    "prisma": "5.19.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
