@@ -54,19 +54,54 @@ export default function NewReportPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Mock upload logic (replace with real Cloudinary/S3 logic)
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
 
-    setUploading(true);
-    // Simulate upload delay
-    setTimeout(() => {
-      // In a real app, you'd upload 'file' to storage and get URL
-      const fakeUrl = URL.createObjectURL(file);
-      setImageUrl(fakeUrl);
-      setUploading(false);
-    }, 1500);
-  };
+  //   setUploading(true);
+  //   // Simulate upload delay
+  //   setTimeout(() => {
+  //     // In a real app, you'd upload 'file' to storage and get URL
+  //     const fakeUrl = URL.createObjectURL(file);
+  //     setImageUrl(fakeUrl);
+  //     setUploading(false);
+  //   }, 1500);
+  // };
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setUploading(true);
+  setError(null);
+
+  try {
+    // preview (optional)
+    const previewUrl = URL.createObjectURL(file);
+    setImageUrl(previewUrl);
+
+    const form = new FormData();
+    form.append("file", file);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || "Upload failed");
+
+    // ✅ replace preview with REAL url
+    setImageUrl(data.url);
+  } catch (err: any) {
+    console.error(err);
+    setImageUrl(null);
+    setError(err.message || "Upload failed");
+  } finally {
+    setUploading(false);
+  }
+};
+
+  const isBlob = imageUrl?.startsWith("blob:");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,8 +118,10 @@ export default function NewReportPage() {
           description,
           location,
           category,
-          ...(reporter ? { reporter } : {}), // ✅ ส่งเฉพาะตอนมีชื่อจริง
-          imageUrl: imageUrl || "https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?auto=format&fit=crop&q=80&w=2600",
+          ...(reporter ? { reporter } : {}),
+          ...(imageUrl && !isBlob ? { imageUrl } : {}),
+          // imageUrl: imageUrl || "https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?auto=format&fit=crop&q=80&w=2600",
+          
         }),
       });
 
